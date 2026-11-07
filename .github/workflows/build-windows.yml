@@ -1,0 +1,55 @@
+name: Windows release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Build portable ZIP and OneFile EXE
+        shell: pwsh
+        run: ./scripts/build_release.ps1 -Mode both
+
+      - name: Smoke test embedded FFmpeg, Deno and libraries
+        shell: pwsh
+        run: |
+          foreach ($exe in @('dist/onedir/Merdo_Zone_Downloader/Merdo_Zone_Downloader.exe', 'dist/onefile/Merdo_Zone_Downloader.exe')) {
+            $process = Start-Process -FilePath $exe -ArgumentList '--self-test' -PassThru -Wait
+            Get-Content (Join-Path $env:TEMP 'merdo_zone_downloader_self_test.txt')
+            if ($process.ExitCode -ne 0) { throw "Smoke test failed for $exe" }
+          }
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Merdo-Zone-Windows
+          path: |
+            release/*.exe
+            release/*.zip
+            release/SHA256SUMS.txt
+            release/THIRD_PARTY_NOTICES.md
+
+      - name: Publish tag release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*.exe
+            release/*.zip
+            release/SHA256SUMS.txt
+            release/THIRD_PARTY_NOTICES.md

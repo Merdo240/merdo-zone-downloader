@@ -1,0 +1,22 @@
+# Build outputs and virtual environments
+.venv/
+__pycache__/
+*.py[cod]
+*.spec.bak
+build/
+dist/
+release/
+.cache/
+
+# Downloaded external runtimes / tools (bundled into release artifacts only)
+vendor/bin/*.exe
+vendor/TOOLS_SHA256.txt
+
+# Local IDE settings
+.vscode/
+.idea/
+*.log
+*.part
+
+# Local yt-dlp state
+.merdo_download_archive.txt
